@@ -4,15 +4,16 @@ net = NetworkAPI()
 
 # Network general options
 net.setLogLevel('info')
+net.execScript('python routing-controller.py', reboot=True)
 
 # Network definition
-net.addP4Switch('s1', cli_input='sw-commands/s1-commands.txt')
-net.addP4Switch('s2', cli_input='sw-commands/s2-commands.txt')
-net.addP4Switch('s3', cli_input='sw-commands/s3-commands.txt')
-net.addP4Switch('s4', cli_input='sw-commands/s4-commands.txt')
-net.addP4Switch('s5', cli_input='sw-commands/s5-commands.txt')
-net.addP4Switch('s6', cli_input='sw-commands/s6-commands.txt')
-net.setP4SourceAll('p4src/ecmp_int.p4')
+net.addP4Switch('s1')
+net.addP4Switch('s2')
+net.addP4Switch('s3')
+net.addP4Switch('s4')
+net.addP4Switch('s5')
+net.addP4Switch('s6')
+net.setP4SourceAll('p4src/loadbalancer.p4')
 
 net.addHost('h1')
 net.addHost('h2')
@@ -42,7 +43,7 @@ net.addLink("s5", "s6")
 net.setBwAll(10)
 
 # Assignment strategy
-net.mixed()
+net.l3()
 
 # Nodes general options
 net.enablePcapDumpAll()
