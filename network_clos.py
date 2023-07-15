@@ -26,6 +26,10 @@ net.addHost('h6')
 net.addHost('h7')
 net.addHost('h8')
 net.addHost('h9')
+net.addHost('h10')
+net.addHost('h11')
+net.addHost('h12')
+
 
 net.addLink("s1", "s3")
 net.addLink("s1", "s4") 
@@ -50,14 +54,17 @@ net.addLink("s5", "s8")
 net.addLink("s6", "h1")
 net.addLink("s6", "h2")
 net.addLink("s6", "h3")
+net.addLink("s6", "h4")
 
-net.addLink("s7", "h4")
 net.addLink("s7", "h5")
 net.addLink("s7", "h6")
+net.addLink("s7", "h7")
+net.addLink("s7", "h8")
 
-net.addLink("s8", "h7")
-net.addLink("s8", "h8")
 net.addLink("s8", "h9")
+net.addLink("s8", "h10")
+net.addLink("s8", "h11")
+net.addLink("s8", "h12")
 
 net.setBwAll(10)
 
