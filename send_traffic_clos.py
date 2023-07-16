@@ -13,7 +13,7 @@ duration = int(sys.argv[1])
 send_cmds = []
 recv_cmds = []
 
-# Popen("sudo killall iperf iperf3", shell=True)
+Popen("sudo killall iperf iperf3", shell=True)
 
 print(len(topo.get_hosts().keys()))
 
@@ -37,13 +37,13 @@ for src_host in sorted(topo.get_hosts().keys(), key = lambda x: int(x[1:]))[:num
 
 #start receivers first
 for recv_cmd in recv_cmds:
-    #Popen(recv_cmd, shell=True)
-    print(recv_cmd)
+    Popen(recv_cmd, shell=True)
+    # print(recv_cmd)
 
 time.sleep(1)
 
 for send_cmd in send_cmds:
-    #Popen(send_cmd, shell=True)
-    print(send_cmd)
+    Popen(send_cmd, shell=True)
+    # print(send_cmd)
 
 
