@@ -10,6 +10,10 @@ iperf_send = "mx {0} iperf3 -M 9000 -c {1} -t {2} --bind {3} --cport {4} -p {5} 
 iperf_recv = "mx {0} iperf3 -s -p {1} --one-off 2>&1 >/dev/null"
 duration = int(sys.argv[1])
 
+duration = 10
+if len(sys.argv) > 1:
+    duration = int(sys.argv[1])
+    
 send_cmds = []
 recv_cmds = []
 

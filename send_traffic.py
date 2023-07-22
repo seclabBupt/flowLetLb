@@ -10,6 +10,11 @@ iperf_send = "mx {0} iperf3 -M 9000 -c {1} -t {2} --bind {3} --cport {4} -p {5} 
 iperf_recv = "mx {0} iperf3 -s -p {1} --one-off 2>&1 >/dev/null"
 duration = int(sys.argv[1])
 
+
+duration = 10
+if len(sys.argv) > 1:
+    duration = int(sys.argv[1])
+    
 send_cmds = []
 recv_cmds = []
 
@@ -32,8 +37,10 @@ for src_host in sorted(topo.get_hosts().keys(), key = lambda x: int(x[1:]))[:num
 #start receivers first
 for recv_cmd in recv_cmds:
     Popen(recv_cmd, shell=True)
+    # print(recv_cmd)
 
 time.sleep(1)
 
 for send_cmd in send_cmds:
     Popen(send_cmd, shell=True)
+    # print(recv_cmd)
