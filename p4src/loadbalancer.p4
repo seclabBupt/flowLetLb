@@ -104,7 +104,7 @@ control MyIngress(inout headers hdr,
               hdr.ipv4.protocol},
 	      (bit<12>)REGISTER_LB_SIZE);
 
-	loadbalance_seed.write((bit<32>)register_index, seed);
+	    loadbalance_seed.write((bit<32>)register_index, seed);
     }
 
     action ecmp_group(bit<14> ecmp_group_id, bit<16> num_nhops){
@@ -122,7 +122,7 @@ control MyIngress(inout headers hdr,
               hdr.ipv4.protocol},
 	      (bit<12>)REGISTER_LB_SIZE);
 
-	loadbalance_seed.read(seed, (bit<32>)register_index);
+	    loadbalance_seed.read(seed, (bit<32>)register_index);
 
         hash(meta.ecmp_hash,
 	    HashAlgorithm.crc16,
@@ -237,7 +237,7 @@ control MyEgress(inout headers hdr,
               hdr.ipv4.protocol},
 	      (bit<12>)REGISTER_LB_SIZE);
 
-	feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
+	    feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
 
     }
 
