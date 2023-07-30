@@ -21,7 +21,7 @@
 
 #define TIMESTAMP_WIDTH 48
 #define ID_WIDTH 16
-#define FLOWLET_TIMEOUT 48w200000
+#define FLOWLET_TIMEOUT 48w100000
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
@@ -50,9 +50,15 @@ control MyIngress(inout headers hdr,
     action read_flowlet_registers(){
 
         //compute register index
-        hash(meta.flowlet_register_index, HashAlgorithm.crc16,
+        hash(meta.flowlet_register_index, 
+            HashAlgorithm.crc16,
             (bit<16>)0,
-            { hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort,hdr.ipv4.protocol},
+            {   hdr.ipv4.srcAddr, 
+                hdr.ipv4.dstAddr, 
+                hdr.tcp.srcPort, 
+                hdr.tcp.dstPort,
+                hdr.ipv4.protocol
+            },
             (bit<14>)8192);
 
          //Read previous time stamp
@@ -95,14 +101,16 @@ control MyIngress(inout headers hdr,
         random(seed, (bit<32>)0, (bit<32>)1234567);
 
         hash(register_index,
-	    HashAlgorithm.crc16,
-	    (bit<1>)0,
-	    { hdr.ipv4.dstAddr,
-	      hdr.ipv4.srcAddr,
-              hdr.tcp.srcPort,
-              hdr.tcp.dstPort,
-              hdr.ipv4.protocol},
-	      (bit<12>)REGISTER_LB_SIZE);
+	        HashAlgorithm.crc16,
+	        (bit<1>)0,
+	        {   
+                hdr.ipv4.dstAddr,
+	            hdr.ipv4.srcAddr,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.ipv4.protocol
+            },
+	        (bit<12>)REGISTER_LB_SIZE);
 
 	    loadbalance_seed.write((bit<32>)register_index, seed);
     }
@@ -113,27 +121,34 @@ control MyIngress(inout headers hdr,
         bit<32> seed;
 
         hash(register_index,
-	    HashAlgorithm.crc16,
-	    (bit<1>)0,
-	    { hdr.ipv4.srcAddr,
-	      hdr.ipv4.dstAddr,
-              hdr.tcp.srcPort,
-              hdr.tcp.dstPort,
-              hdr.ipv4.protocol},
-	      (bit<12>)REGISTER_LB_SIZE);
+	        HashAlgorithm.crc16,
+	        (bit<1>)0,
+            {   
+                hdr.ipv4.srcAddr,
+	            hdr.ipv4.dstAddr,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.ipv4.protocol
+            },
+	        (bit<12>)REGISTER_LB_SIZE);
 
 	    loadbalance_seed.read(seed, (bit<32>)register_index);
+        // random(seed, (bit<32>)0, (bit<32>)1234567);
 
         hash(meta.ecmp_hash,
-	    HashAlgorithm.crc16,
-	    (bit<1>)0,
-	    { hdr.ipv4.srcAddr,
-	      hdr.ipv4.dstAddr,
-              hdr.tcp.srcPort,
-              hdr.tcp.dstPort,
-              hdr.ipv4.protocol,
-              seed},
-	      num_nhops);
+	        HashAlgorithm.crc16,
+	        (bit<1>)0,
+	        { 
+                hdr.ipv4.srcAddr,
+	            hdr.ipv4.dstAddr,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.ipv4.protocol,
+                meta.flowlet_id,
+                seed
+            },
+	        num_nhops);
+
 	    meta.ecmp_group_id = ecmp_group_id;
     }
 
@@ -192,6 +207,8 @@ control MyIngress(inout headers hdr,
                 read_flowlet_registers();
                 meta.flowlet_time_diff = standard_metadata.ingress_global_timestamp - meta.flowlet_last_stamp;
 
+                // update_flowlet_id();
+
                 //check if inter-packet gap is > 100ms
                 if (meta.flowlet_time_diff > FLOWLET_TIMEOUT){
                     update_flowlet_id();
@@ -228,14 +245,16 @@ control MyEgress(inout headers hdr,
     action read_feedback_ts(){
 
         hash(meta.feedback_register_index,
-	    HashAlgorithm.crc16,
-	    (bit<1>)0,
-	    { hdr.ipv4.srcAddr,
-	      hdr.ipv4.dstAddr,
-              hdr.tcp.srcPort,
-              hdr.tcp.dstPort,
-              hdr.ipv4.protocol},
-	      (bit<12>)REGISTER_LB_SIZE);
+	        HashAlgorithm.crc16,
+	        (bit<1>)0,
+	        {
+                hdr.ipv4.srcAddr,
+	            hdr.ipv4.dstAddr,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.ipv4.protocol
+            },
+	        (bit<12>)REGISTER_LB_SIZE);
 
 	    feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
 
@@ -295,22 +314,25 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
     apply {
-	update_checksum(
-	    hdr.ipv4.isValid(),
-            { hdr.ipv4.version,
-	      hdr.ipv4.ihl,
-              hdr.ipv4.tos,
-              hdr.ipv4.totalLen,
-              hdr.ipv4.identification,
-              hdr.ipv4.flags,
-              hdr.ipv4.fragOffset,
-              hdr.ipv4.ttl,
-              hdr.ipv4.protocol,
-              hdr.ipv4.srcAddr,
-              hdr.ipv4.dstAddr},
-              hdr.ipv4.hdrChecksum,
-              HashAlgorithm.csum16);
-
+	    update_checksum(
+            hdr.ipv4.isValid(),
+            {
+                hdr.ipv4.version,
+                hdr.ipv4.ihl,
+                hdr.ipv4.dscp,
+                hdr.ipv4.ecn,
+                hdr.ipv4.totalLen,
+                hdr.ipv4.identification,
+                hdr.ipv4.flags,
+                hdr.ipv4.fragOffset,
+                hdr.ipv4.ttl,
+                hdr.ipv4.protocol,
+                hdr.ipv4.srcAddr,
+                hdr.ipv4.dstAddr
+            },
+            hdr.ipv4.hdrChecksum,
+            HashAlgorithm.csum16
+        );
     }
 }
 

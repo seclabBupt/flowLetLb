@@ -41,6 +41,8 @@ for recv_cmd in recv_cmds:
 
 time.sleep(1)
 
-for send_cmd in send_cmds:
-    Popen(send_cmd, shell=True)
-    # print(recv_cmd)
+# for send_cmd in send_cmds:
+#     Popen(send_cmd, shell=True)
+#     # print(recv_cmd)
+
+Popen(send_cmds[0], shell=True)
