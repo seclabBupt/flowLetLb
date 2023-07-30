@@ -101,18 +101,18 @@ control MyIngress(inout headers hdr,
         random(seed, (bit<32>)0, (bit<32>)1234567);
 
         hash(register_index,
-	        HashAlgorithm.crc16,
-	        (bit<1>)0,
-	        {   
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { 
                 hdr.ipv4.dstAddr,
-	            hdr.ipv4.srcAddr,
+                hdr.ipv4.srcAddr,
                 hdr.tcp.srcPort,
                 hdr.tcp.dstPort,
                 hdr.ipv4.protocol
             },
-	        (bit<12>)REGISTER_LB_SIZE);
+            (bit<12>)REGISTER_LB_SIZE);
 
-	    loadbalance_seed.write((bit<32>)register_index, seed);
+        loadbalance_seed.write((bit<32>)register_index, seed);
     }
 
     action ecmp_group(bit<14> ecmp_group_id, bit<16> num_nhops){
@@ -121,35 +121,35 @@ control MyIngress(inout headers hdr,
         bit<32> seed;
 
         hash(register_index,
-	        HashAlgorithm.crc16,
-	        (bit<1>)0,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
             {   
                 hdr.ipv4.srcAddr,
-	            hdr.ipv4.dstAddr,
+                hdr.ipv4.dstAddr,
                 hdr.tcp.srcPort,
                 hdr.tcp.dstPort,
                 hdr.ipv4.protocol
             },
-	        (bit<12>)REGISTER_LB_SIZE);
+            (bit<12>)REGISTER_LB_SIZE);
 
-	    loadbalance_seed.read(seed, (bit<32>)register_index);
+        loadbalance_seed.read(seed, (bit<32>)register_index);
         // random(seed, (bit<32>)0, (bit<32>)1234567);
 
         hash(meta.ecmp_hash,
-	        HashAlgorithm.crc16,
-	        (bit<1>)0,
-	        { 
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { 
                 hdr.ipv4.srcAddr,
-	            hdr.ipv4.dstAddr,
+                hdr.ipv4.dstAddr,
                 hdr.tcp.srcPort,
                 hdr.tcp.dstPort,
                 hdr.ipv4.protocol,
                 meta.flowlet_id,
                 seed
             },
-	        num_nhops);
+            num_nhops);
 
-	    meta.ecmp_group_id = ecmp_group_id;
+        meta.ecmp_group_id = ecmp_group_id;
     }
 
     action set_nhop(macAddr_t dstAddr, egressSpec_t port) {
@@ -245,18 +245,18 @@ control MyEgress(inout headers hdr,
     action read_feedback_ts(){
 
         hash(meta.feedback_register_index,
-	        HashAlgorithm.crc16,
-	        (bit<1>)0,
-	        {
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            {
                 hdr.ipv4.srcAddr,
-	            hdr.ipv4.dstAddr,
+                hdr.ipv4.dstAddr,
                 hdr.tcp.srcPort,
                 hdr.tcp.dstPort,
                 hdr.ipv4.protocol
             },
-	        (bit<12>)REGISTER_LB_SIZE);
+            (bit<12>)REGISTER_LB_SIZE);
 
-	    feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
+        feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
 
     }
 
@@ -284,10 +284,10 @@ control MyEgress(inout headers hdr,
                             bit<48> backoff;
                             random(backoff, 48w500000, 48w1000000);
                             if ((standard_metadata.ingress_global_timestamp - meta.feedback_ts) > backoff){
-	                            feedback_ts.write((bit<32>)meta.feedback_register_index, standard_metadata.ingress_global_timestamp);
-	                            bit<8> probability;
-	                            random(probability, 8w0, 8w3);
-	                            if (probability == 0) {
+                                feedback_ts.write((bit<32>)meta.feedback_register_index, standard_metadata.ingress_global_timestamp);
+                                bit<8> probability;
+                                random(probability, 8w0, 8w3);
+                                if (probability == 0) {
                                     clone(CloneType.E2E, 100);
                                 }
                             }
@@ -314,7 +314,7 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
     apply {
-	    update_checksum(
+        update_checksum(
             hdr.ipv4.isValid(),
             {
                 hdr.ipv4.version,
