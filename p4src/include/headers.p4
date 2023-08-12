@@ -60,6 +60,13 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
+// struct digest_t {
+//     bit<32> id;
+//     bit<19> enq_qdepth;
+//     bit<19> deq_qdepth;
+//     bit<32> enq_timestamp;
+//     bit<32> deq_timedelta;
+// }
 
 struct feedback_t {
 
@@ -80,6 +87,7 @@ struct metadata {
     bit<16> flowlet_id;    
 
     feedback_t feedback;
+    // digest_t  digest;
 }
 
 struct headers {

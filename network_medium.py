@@ -46,6 +46,7 @@ net.setBwAll(10)
 net.l3()
 
 # Nodes general options
+net.enableCpuPortAll()
 net.enablePcapDumpAll()
 net.enableLogAll()
 net.enableCli()

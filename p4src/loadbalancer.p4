@@ -212,6 +212,14 @@ control MyIngress(inout headers hdr,
                 //check if inter-packet gap is > 100ms
                 if (meta.flowlet_time_diff > FLOWLET_TIMEOUT){
                     update_flowlet_id();
+
+                    // random(meta.digest.id,(bit<32>) 0, (bit<32>) 65000);
+                    // meta.digest.enq_qdepth = standard_metadata.enq_qdepth;
+                    // meta.digest.deq_qdepth = standard_metadata.deq_qdepth;
+                    // meta.digest.enq_timestamp = standard_metadata.enq_timestamp;
+                    // meta.digest.deq_timedelta = standard_metadata.deq_timedelta;
+                    // digest(1, meta.digest);
+
                 }
             }
 
