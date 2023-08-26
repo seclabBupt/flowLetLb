@@ -8,6 +8,7 @@ const bit<16> TYPE_FEEDBACK = 0x7778;
 
 const bit<4>  TYPE_EGRESS_HOST = 1;
 const bit<4>  TYPE_EGRESS_SWITCH = 2;
+const bit<19> ECN_THRESHOLD = 10;
 
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
@@ -68,6 +69,11 @@ header tcp_t{
 //     bit<32> deq_timedelta;
 // }
 
+struct digest_swId_t {
+    bit<32> id;
+    bit<16> role;
+}
+
 struct feedback_t {
 
 }
@@ -88,6 +94,7 @@ struct metadata {
 
     feedback_t feedback;
     // digest_t  digest;
+    digest_swId_t digest_swId;
 }
 
 struct headers {
