@@ -13,6 +13,7 @@ class DigestController():
         self.thrift_port = 9090
         self.controller = SimpleSwitchThriftAPI(self.thrift_port)
 
+    # Used to parse the digest message of the digest_t type defined in header.p4
     def recv_msg_digest(self, msg):
         topic, device_id, ctx_id, list_id, buffer_id, num = struct.unpack("<iQiiQi",
                                                                      msg[:32])
@@ -36,6 +37,24 @@ class DigestController():
             msg = msg[offset:]
         # self.controller.client.bm_learning_ack_buffer(ctx_id, list_id, buffer_id)
 
+    # Used to parse the digest message of the digest_swId_t type defined in header.p4
+    def recv_msg_digest(self, msg):
+        topic, device_id, ctx_id, list_id, buffer_id, num = struct.unpack("<iQiiQi",
+                                                                     msg[:32])
+        print(num, len(msg))
+        offset = 6
+        msg = msg[32:]
+
+        for sub_message in range(num):
+            id = struct.unpack("!I", msg[0:4])[0]
+            role = struct.unpack("!I", b'\x00' + b'\x00' + msg[4:6])[0]
+
+            print("id:", type(id), "role:", type(role))
+            print("id:", id, "role:", role)
+            
+            msg = msg[offset:]
+        # self.controller.client.bm_learning_ack_buffer(ctx_id, list_id, buffer_id)
+    
     def run_digest_loop(self):
         sub = nnpy.Socket(nnpy.AF_SP, nnpy.SUB)
         notifications_socket = self.controller.client.bm_mgmt_get_info().notifications_socket
@@ -46,6 +65,7 @@ class DigestController():
         while True:
             msg = sub.recv()
             print("captured a packet...")
+            #self.recv_msg_digest(msg)
             self.recv_msg_digest(msg)
 
 

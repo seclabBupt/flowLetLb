@@ -25,3 +25,5 @@ for ((i=1; i<=$total_calls; i++)); do
     sleepTime=$(( $duration + 10 ))
     sleep $sleepTime
 done
+
+tar -cf flowInfo.tar.gz flowInfo/*

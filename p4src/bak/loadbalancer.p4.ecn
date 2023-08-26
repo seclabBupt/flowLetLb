@@ -9,8 +9,6 @@
 #define REGISTER_SIZE 1024
 #define REGISTER_WIDTH 32
 
-#define REGISTER_PORT_QUEUE_SIZE 8
-
 #define PKT_INSTANCE_TYPE_NORMAL 0
 #define PKT_INSTANCE_TYPE_INGRESS_CLONE 1
 #define PKT_INSTANCE_TYPE_EGRESS_CLONE 2
@@ -18,7 +16,6 @@
 #define PKT_INSTANCE_TYPE_INGRESS_RECIRC 4
 #define PKT_INSTANCE_TYPE_REPLICATION 5
 #define PKT_INSTANCE_TYPE_RESUBMIT 6
-
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
@@ -155,8 +152,7 @@ control MyIngress(inout headers hdr,
 
     apply {
 
-        if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_INGRESS_RECIRC)
-        {
+        if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_INGRESS_RECIRC){
             bit<32> src_ip = hdr.ipv4.srcAddr;
             hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
             hdr.ipv4.dstAddr = src_ip;
@@ -166,22 +162,16 @@ control MyIngress(inout headers hdr,
         //Only forward packets if they are IP and TTL > 1
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 1)
         {
-            switch (ipv4_lpm.apply().action_run)
-            {
+            switch (ipv4_lpm.apply().action_run){
                 ecmp_group: {
                     ecmp_group_to_nhop.apply();
                 }
             }
         }
 
-        random(meta.digest_swId.id, (bit<32>)0, (bit<32>)65000);
-        meta.digest_swId.role = (bit<16>)1;
-        digest(1, meta.digest_swId);
-
         egress_type.apply();
 
-        if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_NORMAL && hdr.ethernet.etherType == TYPE_FEEDBACK && meta.egress_type == TYPE_EGRESS_HOST)
-        {
+        if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_NORMAL && hdr.ethernet.etherType == TYPE_FEEDBACK && meta.egress_type == TYPE_EGRESS_HOST){
             update_flow_seed();
             drop();
         }
@@ -198,11 +188,8 @@ control MyEgress(inout headers hdr,
                  inout standard_metadata_t standard_metadata) {
 
     register <bit<48>>(REGISTER_SIZE) feedback_ts;
-    register <bit<16>>(REGISTER_PORT_QUEUE_SIZE) enqlength_cache;
-    register <bit<16>>(REGISTER_PORT_QUEUE_SIZE) deqlength_cache;
 
-    action read_feedback_ts()
-    {
+    action read_feedback_ts(){
 
         hash(meta.feedback_register_index,
             HashAlgorithm.crc16,
@@ -217,78 +204,66 @@ control MyEgress(inout headers hdr,
             (bit<12>)REGISTER_SIZE);
 
         feedback_ts.read(meta.feedback_ts, (bit<32>)meta.feedback_register_index);
-
     }
 
-    // Add ECN support
-    // action mark_ecn() {
-    //     hdr.ipv4.ecn = 3;
-    // }
+    action mark_ecn() {
+        hdr.ipv4.ecn = 3;
+    }
 
     apply {
-        // Add port queue statistics
-        enqlength_cache.write((bit<32>)standard_metadata.ingress_port, (bit<16>)standard_metadata.enq_qdepth);
-        deqlength_cache.write((bit<32>)standard_metadata.egress_port, (bit<16>)standard_metadata.deq_qdepth);
-
-        // Cloned packet, used to generate probe
+        //Cloned packet, used to generate probe
         if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_EGRESS_CLONE)
         {
             recirculate(meta.feedback);
         }
-
-        else if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_NORMAL && hdr.ethernet.etherType != TYPE_FEEDBACK)
-        {   
-            // Add ECN support
-            // if (hdr.ipv4.ecn == 1 || hdr.ipv4.ecn == 2)
-            // {
-            //     if (standard_metadata.enq_qdepth >= ECN_THRESHOLD)
-            //     {
-            //         mark_ecn();
-            //     }
-            // }
-
-            if (hdr.tcp.isValid())
+        else if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_NORMAL && hdr.ethernet.etherType != TYPE_FEEDBACK) 
+        {
+            if (hdr.ipv4.ecn == 1 || hdr.ipv4.ecn == 2)
             {
-                if (hdr.telemetry.isValid())
+                if (standard_metadata.enq_qdepth >= ECN_THRESHOLD)
                 {
-                    if (hdr.telemetry.enq_qdepth < (bit<16>)standard_metadata.enq_qdepth && meta.egress_type == TYPE_EGRESS_SWITCH)
-                    {
-                        hdr.telemetry.enq_qdepth = (bit<16>)standard_metadata.enq_qdepth;
-                    }
-                    // If egresss. We do not update the queue of the last hop because this can not be changed anyways.
-                    else if (meta.egress_type == TYPE_EGRESS_HOST)
-                    {
-                        hdr.ethernet.etherType = TYPE_IPV4;
-                        hdr.telemetry.setInvalid();
+                    mark_ecn();
+                }
+            }
+            
+            if (hdr.telemetry.isValid()){
+                if (hdr.telemetry.enq_qdepth < (bit<16>)standard_metadata.enq_qdepth && meta.egress_type == TYPE_EGRESS_SWITCH)
+                {
+                    hdr.telemetry.enq_qdepth = (bit<16>)standard_metadata.enq_qdepth;
+                }
+                //If egresss. We do not update the queue of the last hop because this can not be changed anyways.
+                else if (meta.egress_type == TYPE_EGRESS_HOST)
+                {
+                    hdr.ethernet.etherType = TYPE_IPV4;
+                    hdr.telemetry.setInvalid();
 
-                        // clone packet if above threshold
-                        if (hdr.telemetry.enq_qdepth > 50)
+                    //clone packet if above threshold
+                    if (hdr.telemetry.enq_qdepth > 50)
+                    {
+                        read_feedback_ts();
+                        bit<48> backoff;
+                        random(backoff, 48w500000, 48w1000000);
+                        if ((standard_metadata.ingress_global_timestamp - meta.feedback_ts) > backoff)
                         {
-                            read_feedback_ts();
-                            bit<48> backoff;
-                            random(backoff, 48w500000, 48w1000000);
-                            if ((standard_metadata.ingress_global_timestamp - meta.feedback_ts) > backoff)
+                            feedback_ts.write((bit<32>)meta.feedback_register_index, standard_metadata.ingress_global_timestamp);
+                            bit<8> probability;
+                            random(probability, 8w0, 8w3);
+                            if (probability == 0) 
                             {
-                                feedback_ts.write((bit<32>)meta.feedback_register_index, standard_metadata.ingress_global_timestamp);
-                                bit<8> probability;
-                                random(probability, 8w0, 8w3);
-                                if (probability == 0) 
-                                {
-                                    clone(CloneType.E2E, 100);
-                                }
+                                clone(CloneType.E2E, 100);
                             }
                         }
                     }
                 }
-                else {
-                    //If ingress and next hop is a switch
-                    if (meta.egress_type == TYPE_EGRESS_SWITCH)
-                    {
-                        hdr.telemetry.setValid();
-                        hdr.telemetry.enq_qdepth = (bit<16>)standard_metadata.enq_qdepth;
-                        hdr.ethernet.etherType = TYPE_TELEMETRY;
-                        hdr.telemetry.nextHeaderType = TYPE_IPV4;
-                    }
+            }
+            else {
+                //If ingress and next hop is a switch
+                if (meta.egress_type == TYPE_EGRESS_SWITCH)
+                {
+                    hdr.telemetry.setValid();
+                    hdr.telemetry.enq_qdepth = (bit<16>)standard_metadata.enq_qdepth;
+                    hdr.ethernet.etherType = TYPE_TELEMETRY;
+                    hdr.telemetry.nextHeaderType = TYPE_IPV4;
                 }
             }
         }
